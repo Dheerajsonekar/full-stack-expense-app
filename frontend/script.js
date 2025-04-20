@@ -1,18 +1,26 @@
 const form = document.getElementById("expenseForm");
 const expenseList = document.getElementById("expenseList");
+let editingExpenseId = null;
 
-form.addEventListener("submit", async(e)=>{
+form.addEventListener("submit", async (e)=>{
     e.preventDefault();
 
      const expense = {
-        description: document.getElementById("description").value,
-        amount: document.getElementById("amount").value
+        description: document.getElementById('description').value,
+        amount: document.getElementById('amount').value
      }
-
+     console.log(expense);
      try{
-        await axios.post("", expense);
+      if(editingExpenseId){
+         await axios.put(`http://localhost:3000/api/expense/${editingExpenseId}`, expense);
+         editingExpenseId = null;
+      } else{
+
+         await axios.post('http://localhost:3000/api/expense/', expense);
+      }
+        
         form.reset();
-        showExpenses();
+        await showExpenses();
      }catch(err){
         console.error("Error adding expense: ", err);
      }
@@ -21,24 +29,26 @@ form.addEventListener("submit", async(e)=>{
 
 async function showExpenses(){
     try{
-         const response = await axios.get("");
+         const response = await axios.get("http://localhost:3000/api/expense/");
          const expenses = response.data;
-         expenseList.innerHTML ="";
+         
+         expenseList.innerHTML ='';
          expenses.forEach(expense =>{
             const li = document.createElement("li");
-            const editBtn = document.creaeElement("button");
+            const editBtn = document.createElement("button");
             const deleteBtn = document.createElement("button");
             editBtn.textContent = "Edit"
             deleteBtn.textContent = "Delete"
             editBtn.classList.add("btn", "btn-primary", "btn-sm", "float-end", "mx-2");
-            deleteBtn.classList.add("btn", "btn-danget", "btn-sm", "float-end", "mx-2");
-            editBtn.addEventListener("click", editExpense(expense._id));
-            deleteBtn.addEventListener("click", deleteExpense(expense._id));
-            li.appendChild(editBtn)
-            li.appendChild(deleteBtn)
+            deleteBtn.classList.add("btn", "btn-danger", "btn-sm", "float-end", "mx-2");
+            editBtn.addEventListener("click", ()=>editExpense(expense.id));
+            deleteBtn.addEventListener("click",()=> deleteExpense(expense.id));
+           
 
             li.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center");;
             li.textContent = `${expense.description} -$${expense.amount} `;
+            li.appendChild(editBtn)
+            li.appendChild(deleteBtn)
             expenseList.appendChild(li);
          })
     }catch(err){
@@ -48,21 +58,25 @@ async function showExpenses(){
 
 async function deleteExpense(id){
      try{
-        await axios.delete()
+        await axios.delete(`http://localhost:3000/api/expense/${id}`)
+        await showExpenses();
      }catch(err){
-        console.error("Error in deleting expens: ", err);
+        console.error("Error in deleting expense in front end: ", err);
      }
 }
 
 async function editExpense(id){
     try{
 
-        const response = await axios.get(`/${id}`);
+        const response = await axios.get(`http://localhost:3000/api/expense/${id}`);
         const expense = response.data;
         document.getElementById("description").value = expense.description;
         document.getElementById("amount").value = expense.amount;
-
+        editingExpenseId = id;
+        
     }catch(err){
         console.error("Error in editing expense: ", err);
     }
 }
+
+document.addEventListener("DOMContentLoaded", showExpenses);
